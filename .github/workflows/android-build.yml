@@ -23,6 +23,16 @@ jobs:
           unzip -o IQ_Floating_Signal_Source_Ready-1.zip -d extracted
           test -f extracted/iqoption_floating_signal_app/app/build.gradle
           test -f extracted/iqoption_floating_signal_app/settings.gradle
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('extracted/iqoption_floating_signal_app/app/src/main/java/com/example/iqsignal/FloatingService.java')
+          s = p.read_text()
+          old = 'Runnable tick=()->{update(); handler.postDelayed(tick,15000);};'
+          new = 'Runnable tick = new Runnable() { public void run() { update(); handler.postDelayed(this, 15000); } };'
+          if old not in s:
+              raise SystemExit('Expected tick initializer not found; stopping rather than changing the wrong code.')
+          p.write_text(s.replace(old, new, 1))
+          PY
 
       - name: Install Gradle
         uses: gradle/actions/setup-gradle@v4
